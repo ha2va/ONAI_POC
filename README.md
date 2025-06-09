@@ -1,6 +1,8 @@
 # ONTOLOGY POC
 
-This proof of concept implements basic CRUD APIs for an ontology-based forwarding solution using Flask and SQLAlchemy.
+This sample Flask web app uses Python's built‑in `sqlite3` module to store data.
+The schema follows the ontology tables and is created automatically on startup.
+Only simple `GET` endpoints are provided to list rows from each table.
 
 ## Setup
 
@@ -20,11 +22,11 @@ The application uses SQLite (`poc.db`) in the project directory.
 
 ## Available endpoints
 
-- `/carriers`
-- `/locations`
-- `/routes`
-- `/schedules`
-- `/shipments`
-- `/costitems`
+- `GET /carriers`
+- `GET /locations`
+- `GET /routes`
+- `GET /schedules`
+- `GET /shipments`
+- `GET /costitems`
+- `GET /locationcoverage`
 
-Each endpoint supports standard `POST`, `GET`, `PUT`, and `DELETE` operations.
