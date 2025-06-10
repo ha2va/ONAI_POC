@@ -2,7 +2,8 @@
 
 This sample Flask web app uses Python's built‑in `sqlite3` module to store data.
 The schema follows the ontology tables and is created automatically on startup.
-Only simple `GET` endpoints are provided to list rows from each table.
+웹 브라우저에서 기본 CRUD 화면을 제공하며,
+또한 각 테이블을 조회할 수 있는 간단한 `GET` API도 제공합니다.
 
 ## Setup
 
@@ -18,7 +19,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-The application uses SQLite (`poc.db`) in the project directory.
+애플리케이션은 `db/onai_route.db` 파일을 사용합니다.
 
 ## Available endpoints
 

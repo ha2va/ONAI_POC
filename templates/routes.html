@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Routes</h1>
+<form method="get">
+    Origin <input type="text" name="origin" value="{{ request.args.get('origin','') }}">
+    Destination <input type="text" name="destination" value="{{ request.args.get('destination','') }}">
+    Type
+    <select name="type">
+        <option value="">-- All --</option>
+        {% for t in types %}
+            <option value="{{ t['type'] }}" {% if request.args.get('type') == t['type'] %}selected{% endif %}>{{ t['type'] }}</option>
+        {% endfor %}
+    </select>
+    <input type="submit" value="Search">
+    <a href="{{ url_for('new_route') }}">Create</a>
+</form>
+<table>
+<tr>
+    <th>ID</th><th>Origin</th><th>Destination</th><th>Carrier</th><th>Cost</th><th>Lead Time</th><th>Mode</th><th>Type</th><th>Freezing</th><th>Dangerous</th><th>Actions</th>
+</tr>
+{% for r in rows %}
+<tr>
+    <td>{{ r['id'] }}</td>
+    <td>{{ r['origin_name'] }}</td>
+    <td>{{ r['destination_name'] }}</td>
+    <td>{{ r['carrier_name'] }}</td>
+    <td>{{ r['base_cost'] }}</td>
+    <td>{{ r['lead_time'] }}</td>
+    <td>{{ r['transport_mode'] }}</td>
+    <td>{{ r['type'] }}</td>
+    <td>{{ r['supports_freezing'] }}</td>
+    <td>{{ r['supports_dangerous_goods'] }}</td>
+    <td>
+        <a href="{{ url_for('edit_route', id=r['id']) }}">Edit</a>
+        <form class="inline" method="post" action="{{ url_for('delete_route', id=r['id']) }}">
+            <button type="submit">Delete</button>
+        </form>
+    </td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}
