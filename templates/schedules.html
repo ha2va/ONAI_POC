@@ -6,7 +6,7 @@
     <select name="route_id">
         <option value="">-- All --</option>
         {% for r in routes %}
-            <option value="{{ r['id'] }}" {% if request.args.get('route_id') == str(r['id']) %}selected{% endif %}>{{ r['origin_name'] }} - {{ r['destination_name'] }}</option>
+            <option value="{{ r['id'] }}" {% if request.args.get('route_id') == r['id']|string %}selected{% endif %}>{{ r['origin_name'] }} - {{ r['destination_name'] }}</option>
         {% endfor %}
     </select>
     <input type="submit" value="Search">
