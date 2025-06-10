@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Schedules</h1>
+<form method="get">
+    Route
+    <select name="route_id">
+        <option value="">-- All --</option>
+        {% for r in routes %}
+            <option value="{{ r['id'] }}" {% if request.args.get('route_id') == str(r['id']) %}selected{% endif %}>{{ r['origin_name'] }} - {{ r['destination_name'] }}</option>
+        {% endfor %}
+    </select>
+    <input type="submit" value="Search">
+    <a href="{{ url_for('new_schedule') }}">Create</a>
+</form>
+<table>
+<tr>
+    <th>ID</th><th>Route</th><th>Departure Day</th><th>Cutoff Day Offset</th><th>Cutoff Hour</th><th>Frequency</th><th>Type</th><th>Actions</th>
+</tr>
+{% for s in rows %}
+<tr>
+    <td>{{ s['id'] }}</td>
+    <td>{{ s['origin_name'] }} - {{ s['destination_name'] }}</td>
+    <td>{{ s['departure_day'] }}</td>
+    <td>{{ s['cutoff_day_offset'] }}</td>
+    <td>{{ s['cutoff_hour'] }}</td>
+    <td>{{ s['frequency'] }}</td>
+    <td>{{ s['type'] }}</td>
+    <td>
+        <a href="{{ url_for('edit_schedule', id=s['id']) }}">Edit</a>
+        <form class="inline" method="post" action="{{ url_for('delete_schedule', id=s['id']) }}">
+            <button type="submit">Delete</button>
+        </form>
+    </td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

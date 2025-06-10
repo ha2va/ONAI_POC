@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ title or 'DB Admin' }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; }
+        nav { width: 200px; background: #f2f2f2; padding: 1em; }
+        main { flex: 1; padding: 1em; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 4px 8px; }
+        form.inline { display: inline; }
+    </style>
+</head>
+<body>
+<nav>
+    <ul>
+        <li><a href="{{ url_for('list_locations') }}">Locations</a></li>
+        <li><a href="{{ url_for('list_routes') }}">Routes</a></li>
+        <li><a href="{{ url_for('list_carriers') }}">Carriers</a></li>
+        <li><a href="{{ url_for('list_schedules') }}">Schedules</a></li>
+    </ul>
+</nav>
+<main>
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

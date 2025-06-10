@@ -1,8 +1,8 @@
-from flask import Flask, g, jsonify
+from flask import Flask, g, jsonify, render_template, request, redirect, url_for
 import sqlite3
 
 app = Flask(__name__)
-DATABASE = 'poc.db'
+DATABASE = 'db/onai_route.db'
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS Carrier (
@@ -109,6 +109,182 @@ def query_all(table):
     rows = cur.fetchall()
     cur.close()
     return [dict(row) for row in rows]
+
+def query_db(query, args=(), one=False):
+    cur = get_db().execute(query, args)
+    rv = cur.fetchall()
+    cur.close()
+    return (dict(rv[0]) if rv else None) if one else [dict(r) for r in rv]
+
+def execute_db(query, args=()):
+    db = get_db()
+    cur = db.execute(query, args)
+    db.commit()
+    return cur.lastrowid
+
+
+
+# Web UI routes
+@app.route('/')
+def index():
+    return redirect(url_for('list_locations'))
+
+@app.route('/locations/list')
+def list_locations():
+    query = "SELECT * FROM Location WHERE 1=1"
+    params = []
+    if request.args.get('name'):
+        query += " AND name LIKE ?"
+        params.append('%'+request.args['name']+'%')
+    if request.args.get('type'):
+        query += " AND type LIKE ?"
+        params.append('%'+request.args['type']+'%')
+    if request.args.get('country'):
+        query += " AND country LIKE ?"
+        params.append('%'+request.args['country']+'%')
+    rows = query_db(query, params)
+    return render_template('locations.html', rows=rows)
+
+@app.route('/locations/new', methods=['GET','POST'])
+def new_location():
+    if request.method=='POST':
+        execute_db("INSERT INTO Location (name,type,country,supports_freezing,supports_storage,supports_dangerous_goods) VALUES (?,?,?,?,?,?)",
+                   [request.form['name'], request.form['type'], request.form['country'],
+                    1 if request.form.get('supports_freezing') else 0,
+                    1 if request.form.get('supports_storage') else 0,
+                    1 if request.form.get('supports_dangerous_goods') else 0])
+        return redirect(url_for('list_locations'))
+    return render_template('location_form.html', location=None)
+
+@app.route('/locations/edit/<int:id>', methods=['GET','POST'])
+def edit_location(id):
+    loc = query_db("SELECT * FROM Location WHERE id=?", [id], one=True)
+    if request.method=='POST':
+        execute_db("UPDATE Location SET name=?, type=?, country=?, supports_freezing=?, supports_storage=?, supports_dangerous_goods=? WHERE id=?",
+                   [request.form['name'], request.form['type'], request.form['country'],
+                    1 if request.form.get('supports_freezing') else 0,
+                    1 if request.form.get('supports_storage') else 0,
+                    1 if request.form.get('supports_dangerous_goods') else 0, id])
+        return redirect(url_for('list_locations'))
+    return render_template('location_form.html', location=loc)
+
+@app.route('/locations/delete/<int:id>', methods=['POST'])
+def delete_location(id):
+    execute_db("DELETE FROM Location WHERE id=?", [id])
+    return redirect(url_for('list_locations'))
+
+@app.route('/carriers/list')
+def list_carriers():
+    query = "SELECT * FROM Carrier WHERE 1=1"
+    params = []
+    if request.args.get('carrier_name'):
+        query += " AND carrier_name LIKE ?"
+        params.append('%'+request.args['carrier_name']+'%')
+    if request.args.get('type'):
+        query += " AND type LIKE ?"
+        params.append('%'+request.args['type']+'%')
+    rows = query_db(query, params)
+    return render_template('carriers.html', rows=rows)
+
+@app.route('/carriers/new', methods=['GET','POST'])
+def new_carrier():
+    if request.method=='POST':
+        execute_db("INSERT INTO Carrier (carrier_name,type,reliability,supports_freezing,supports_dangerous_goods) VALUES (?,?,?,?,?)",
+                   [request.form['carrier_name'], request.form['type'], request.form.get('reliability'),
+                    1 if request.form.get('supports_freezing') else 0,
+                    1 if request.form.get('supports_dangerous_goods') else 0])
+        return redirect(url_for('list_carriers'))
+    return render_template('carrier_form.html', carrier=None)
+
+@app.route('/carriers/edit/<int:id>', methods=['GET','POST'])
+def edit_carrier(id):
+    car = query_db("SELECT * FROM Carrier WHERE id=?", [id], one=True)
+    if request.method=='POST':
+        execute_db("UPDATE Carrier SET carrier_name=?, type=?, reliability=?, supports_freezing=?, supports_dangerous_goods=? WHERE id=?",
+                   [request.form['carrier_name'], request.form['type'], request.form.get('reliability'),
+                    1 if request.form.get('supports_freezing') else 0,
+                    1 if request.form.get('supports_dangerous_goods') else 0, id])
+        return redirect(url_for('list_carriers'))
+    return render_template('carrier_form.html', carrier=car)
+
+@app.route('/carriers/delete/<int:id>', methods=['POST'])
+def delete_carrier(id):
+    execute_db("DELETE FROM Carrier WHERE id=?", [id])
+    return redirect(url_for('list_carriers'))
+
+@app.route('/routes/list')
+def list_routes():
+    query = "SELECT r.*, o.name as origin_name, d.name as destination_name, c.carrier_name FROM Route r LEFT JOIN Location o ON r.origin_id=o.id LEFT JOIN Location d ON r.destination_id=d.id LEFT JOIN Carrier c ON r.carrier_id=c.id WHERE 1=1"
+    params = []
+    if request.args.get('origin'):
+        query += " AND o.name LIKE ?"
+        params.append('%'+request.args['origin']+'%')
+    if request.args.get('destination'):
+        query += " AND d.name LIKE ?"
+        params.append('%'+request.args['destination']+'%')
+    rows = query_db(query, params)
+    return render_template('routes.html', rows=rows)
+
+@app.route('/routes/new', methods=['GET','POST'])
+def new_route():
+    locations = query_db("SELECT id, name FROM Location")
+    carriers = query_db("SELECT id, carrier_name FROM Carrier")
+    if request.method=='POST':
+        execute_db("INSERT INTO Route (origin_id,destination_id,carrier_id,base_cost,lead_time,transport_mode,type,supports_freezing,supports_dangerous_goods) VALUES (?,?,?,?,?,?,?,?,?)",
+                   [request.form['origin_id'], request.form['destination_id'], request.form['carrier_id'], request.form.get('base_cost'), request.form.get('lead_time'), request.form['transport_mode'], request.form['type'], 1 if request.form.get('supports_freezing') else 0, 1 if request.form.get('supports_dangerous_goods') else 0])
+        return redirect(url_for('list_routes'))
+    return render_template('route_form.html', route=None, locations=locations, carriers=carriers)
+
+@app.route('/routes/edit/<int:id>', methods=['GET','POST'])
+def edit_route(id):
+    route = query_db("SELECT * FROM Route WHERE id=?", [id], one=True)
+    locations = query_db("SELECT id, name FROM Location")
+    carriers = query_db("SELECT id, carrier_name FROM Carrier")
+    if request.method=='POST':
+        execute_db("UPDATE Route SET origin_id=?, destination_id=?, carrier_id=?, base_cost=?, lead_time=?, transport_mode=?, type=?, supports_freezing=?, supports_dangerous_goods=? WHERE id=?",
+                   [request.form['origin_id'], request.form['destination_id'], request.form['carrier_id'], request.form.get('base_cost'), request.form.get('lead_time'), request.form['transport_mode'], request.form['type'], 1 if request.form.get('supports_freezing') else 0, 1 if request.form.get('supports_dangerous_goods') else 0, id])
+        return redirect(url_for('list_routes'))
+    return render_template('route_form.html', route=route, locations=locations, carriers=carriers)
+
+@app.route('/routes/delete/<int:id>', methods=['POST'])
+def delete_route(id):
+    execute_db("DELETE FROM Route WHERE id=?", [id])
+    return redirect(url_for('list_routes'))
+
+@app.route('/schedules/list')
+def list_schedules():
+    base_query = "SELECT s.*, o.name as origin_name, d.name as destination_name FROM Schedule s LEFT JOIN Route r ON s.route_id=r.id LEFT JOIN Location o ON r.origin_id=o.id LEFT JOIN Location d ON r.destination_id=d.id WHERE 1=1"
+    params = []
+    if request.args.get('route_id'):
+        base_query += " AND s.route_id=?"
+        params.append(request.args['route_id'])
+    rows = query_db(base_query, params)
+    routes = query_db("SELECT r.id, o.name as origin_name, d.name as destination_name FROM Route r LEFT JOIN Location o ON r.origin_id=o.id LEFT JOIN Location d ON r.destination_id=d.id")
+    return render_template('schedules.html', rows=rows, routes=routes)
+
+@app.route('/schedules/new', methods=['GET','POST'])
+def new_schedule():
+    routes = query_db("SELECT r.id, o.name as origin_name, d.name as destination_name FROM Route r LEFT JOIN Location o ON r.origin_id=o.id LEFT JOIN Location d ON r.destination_id=d.id")
+    if request.method=='POST':
+        execute_db("INSERT INTO Schedule (route_id,departure_day,cutoff_day_offset,cutoff_hour,frequency,type) VALUES (?,?,?,?,?,?)",
+                   [request.form['route_id'], request.form['departure_day'], request.form.get('cutoff_day_offset'), request.form.get('cutoff_hour'), request.form.get('frequency'), request.form['type']])
+        return redirect(url_for('list_schedules'))
+    return render_template('schedule_form.html', schedule=None, routes=routes)
+
+@app.route('/schedules/edit/<int:id>', methods=['GET','POST'])
+def edit_schedule(id):
+    schedule = query_db("SELECT * FROM Schedule WHERE id=?", [id], one=True)
+    routes = query_db("SELECT r.id, o.name as origin_name, d.name as destination_name FROM Route r LEFT JOIN Location o ON r.origin_id=o.id LEFT JOIN Location d ON r.destination_id=d.id")
+    if request.method=='POST':
+        execute_db("UPDATE Schedule SET route_id=?, departure_day=?, cutoff_day_offset=?, cutoff_hour=?, frequency=?, type=? WHERE id=?",
+                   [request.form['route_id'], request.form['departure_day'], request.form.get('cutoff_day_offset'), request.form.get('cutoff_hour'), request.form.get('frequency'), request.form['type'], id])
+        return redirect(url_for('list_schedules'))
+    return render_template('schedule_form.html', schedule=schedule, routes=routes)
+
+@app.route('/schedules/delete/<int:id>', methods=['POST'])
+def delete_schedule(id):
+    execute_db("DELETE FROM Schedule WHERE id=?", [id])
+    return redirect(url_for('list_schedules'))
 
 @app.route('/carriers')
 def get_carriers():

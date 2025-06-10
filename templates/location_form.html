@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>{{ 'Edit' if location else 'New' }} Location</h1>
+<form method="post">
+    Name <input type="text" name="name" value="{{ location.name if location else '' }}"><br>
+    Type <input type="text" name="type" value="{{ location.type if location else '' }}"><br>
+    Country <input type="text" name="country" value="{{ location.country if location else '' }}"><br>
+    Supports Freezing <input type="checkbox" name="supports_freezing" value="1" {% if location and location.supports_freezing %}checked{% endif %}><br>
+    Supports Storage <input type="checkbox" name="supports_storage" value="1" {% if location and location.supports_storage %}checked{% endif %}><br>
+    Supports Dangerous Goods <input type="checkbox" name="supports_dangerous_goods" value="1" {% if location and location.supports_dangerous_goods %}checked{% endif %}><br>
+    <button type="submit">Save</button>
+</form>
+{% endblock %}
