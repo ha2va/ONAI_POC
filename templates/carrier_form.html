@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>{{ 'Edit' if carrier else 'New' }} Carrier</h1>
+<form method="post">
+    Name <input type="text" name="carrier_name" value="{{ carrier.carrier_name if carrier else '' }}"><br>
+    Type <input type="text" name="type" value="{{ carrier.type if carrier else '' }}"><br>
+    Reliability <input type="number" step="0.01" name="reliability" value="{{ carrier.reliability if carrier else '' }}"><br>
+    Supports Freezing <input type="checkbox" name="supports_freezing" value="1" {% if carrier and carrier.supports_freezing %}checked{% endif %}><br>
+    Supports Dangerous Goods <input type="checkbox" name="supports_dangerous_goods" value="1" {% if carrier and carrier.supports_dangerous_goods %}checked{% endif %}><br>
+    <button type="submit">Save</button>
+</form>
+{% endblock %}
