@@ -84,6 +84,12 @@ CREATE TABLE IF NOT EXISTS LocationCoverage (
     FOREIGN KEY (warehouse_id) REFERENCES Location(id),
     FOREIGN KEY (covers_location_id) REFERENCES Location(id)
 );
+
+CREATE TABLE IF NOT EXISTS Tariff (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    cost REAL
+);
 '''
 
 def get_db():
@@ -332,6 +338,42 @@ def delete_schedule(id):
     return redirect(url_for('list_schedules'))
 
 
+@app.route('/tariffs/list')
+def list_tariffs():
+    query = "SELECT * FROM Tariff WHERE 1=1"
+    params = []
+    if request.args.get('name'):
+        query += " AND name LIKE ?"
+        params.append('%' + request.args['name'] + '%')
+    rows = query_db(query, params)
+    return render_template('tariffs.html', rows=rows)
+
+
+@app.route('/tariffs/new', methods=['GET', 'POST'])
+def new_tariff():
+    if request.method == 'POST':
+        execute_db("INSERT INTO Tariff (name, cost) VALUES (?,?)",
+                   [request.form['name'], request.form.get('cost')])
+        return redirect(url_for('list_tariffs'))
+    return render_template('tariff_form.html', tariff=None)
+
+
+@app.route('/tariffs/edit/<int:id>', methods=['GET', 'POST'])
+def edit_tariff(id):
+    tariff = query_db("SELECT * FROM Tariff WHERE id=?", [id], one=True)
+    if request.method == 'POST':
+        execute_db("UPDATE Tariff SET name=?, cost=? WHERE id=?",
+                   [request.form['name'], request.form.get('cost'), id])
+        return redirect(url_for('list_tariffs'))
+    return render_template('tariff_form.html', tariff=tariff)
+
+
+@app.route('/tariffs/delete/<int:id>', methods=['POST'])
+def delete_tariff(id):
+    execute_db("DELETE FROM Tariff WHERE id=?", [id])
+    return redirect(url_for('list_tariffs'))
+
+
 @app.route('/plan', methods=['GET', 'POST'])
 def plan():
     locations = query_db("SELECT id, name, type FROM Location")
@@ -375,6 +417,10 @@ def get_costitems():
 @app.route('/locationcoverage')
 def get_location_coverage():
     return jsonify(query_all('LocationCoverage'))
+
+@app.route('/tariffs')
+def get_tariffs():
+    return jsonify(query_all('Tariff'))
 
 if __name__ == '__main__':
     with app.app_context():
