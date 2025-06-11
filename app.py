@@ -1,5 +1,6 @@
 from flask import Flask, g, jsonify, render_template, request, redirect, url_for
 import sqlite3
+from datetime import timedelta
 
 app = Flask(__name__)
 DATABASE = 'db/onai_route.db'
@@ -161,6 +162,16 @@ def find_plans(origin_id, dest_id):
         total_lead = sum(r['lead_time'] or 0 for r in plan_routes)
         result.append({'routes': plan_routes, 'total_cost': total_cost, 'total_lead_time': total_lead})
     return result
+
+
+def find_plans_with_tariff(origin_id, dest_id, daily_tariff):
+    """Return plans including tariff costs based on lead time."""
+    plans = find_plans(origin_id, dest_id)
+    for plan in plans:
+        duration = timedelta(days=plan['total_lead_time'])
+        plan['tariff_cost'] = duration.days * daily_tariff
+        plan['total_cost_with_tariff'] = plan['total_cost'] + plan['tariff_cost']
+    return plans
 
 
 
