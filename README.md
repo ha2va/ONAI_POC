@@ -21,6 +21,22 @@ python app.py
 
 애플리케이션은 `db/onai_route.db` 파일을 사용합니다.
 
+## Tariff table
+
+The application now contains a **Tariff** table that holds pricing
+information for each route. Tariffs represent the costs that are
+applied when a shipment uses a specific route and are used when
+recommending a plan. A new `/tariffs` page lists all tariffs in the
+web interface so you can review and edit them.
+
+## Plan recommendation
+
+The **Plan Recommendation** page (`/plan`) suggests a series of routes
+between two locations. When planning, you select the desired start
+date and the system automatically computes the end date based on the
+lead times of each chosen route. The total cost shown for each plan is
+calculated using the tariffs associated with those routes.
+
 ## Available endpoints
 
 - `GET /carriers`
@@ -30,4 +46,5 @@ python app.py
 - `GET /shipments`
 - `GET /costitems`
 - `GET /locationcoverage`
+- `GET /tariffs`
 
