@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Plan Recommendation</h1>
+<form method="post" id="plan-form">
+    <div>
+        출발지 :
+        <select name="origin_type" id="origin_type">
+            {% for t in types %}
+            <option value="{{ t }}" {% if t == origin_type %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+        </select>
+        <select name="origin_id" id="origin_id"></select>
+    </div>
+    <div>
+        도착지 :
+        <select name="dest_type" id="dest_type">
+            {% for t in types %}
+            <option value="{{ t }}" {% if t == dest_type %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+        </select>
+        <select name="dest_id" id="dest_id"></select>
+    </div>
+    <button type="submit">Plan 추천</button>
+</form>
+{% if plans %}
+    {% for plan in plans %}
+        <h3>Plan {{ loop.index }} - Routes: {{ plan.routes|length }}, Cost Sum: {{ plan.total_cost }}, Lead Time Sum: {{ plan.total_lead_time }}</h3>
+        <table>
+            <tr>
+                <th>#</th><th>ID</th><th>Origin</th><th>Destination</th><th>Cost</th><th>Lead Time</th>
+            </tr>
+            {% for r in plan.routes %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ r['id'] }}</td>
+                <td>{{ r['origin_name'] }}</td>
+                <td>{{ r['destination_name'] }}</td>
+                <td>{{ r['base_cost'] }}</td>
+                <td>{{ r['lead_time'] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% endfor %}
+{% endif %}
+<script>
+const locations = {{ locations|tojson }};
+function populate(typeId, nameId, selected){
+    const typeVal = document.getElementById(typeId).value;
+    const nameSel = document.getElementById(nameId);
+    nameSel.innerHTML = '';
+    locations.filter(l => l.type === typeVal).forEach(l => {
+        const opt = document.createElement('option');
+        opt.value = l.id;
+        opt.textContent = l.name;
+        if(selected && selected == l.id){
+            opt.selected = true;
+        }
+        nameSel.appendChild(opt);
+    });
+}
+window.addEventListener('load', () => {
+    populate('origin_type','origin_id','{{ origin_id }}');
+    populate('dest_type','dest_id','{{ dest_id }}');
+    document.getElementById('origin_type').addEventListener('change', () => populate('origin_type','origin_id'));
+    document.getElementById('dest_type').addEventListener('change', () => populate('dest_type','dest_id'));
+});
+</script>
+{% endblock %}

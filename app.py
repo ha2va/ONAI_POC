@@ -123,6 +123,40 @@ def execute_db(query, args=()):
     return cur.lastrowid
 
 
+def find_plans(origin_id, dest_id):
+    routes = query_db(
+        "SELECT r.id, r.origin_id, o.name as origin_name, r.destination_id, d.name as destination_name, r.base_cost, r.lead_time "
+        "FROM Route r "
+        "LEFT JOIN Location o ON r.origin_id=o.id "
+        "LEFT JOIN Location d ON r.destination_id=d.id"
+    )
+    adj = {}
+    for r in routes:
+        adj.setdefault(r['origin_id'], []).append(r)
+
+    plans = []
+
+    def dfs(current, path, visited):
+        if current == dest_id:
+            plans.append(list(path))
+            return
+        for r in adj.get(current, []):
+            if r['destination_id'] not in visited:
+                visited.add(r['destination_id'])
+                path.append(r)
+                dfs(r['destination_id'], path, visited)
+                path.pop()
+                visited.remove(r['destination_id'])
+
+    dfs(origin_id, [], {origin_id})
+    result = []
+    for plan_routes in plans:
+        total_cost = sum(r['base_cost'] or 0 for r in plan_routes)
+        total_lead = sum(r['lead_time'] or 0 for r in plan_routes)
+        result.append({'routes': plan_routes, 'total_cost': total_cost, 'total_lead_time': total_lead})
+    return result
+
+
 
 # Web UI routes
 @app.route('/')
@@ -296,6 +330,23 @@ def edit_schedule(id):
 def delete_schedule(id):
     execute_db("DELETE FROM Schedule WHERE id=?", [id])
     return redirect(url_for('list_schedules'))
+
+
+@app.route('/plan', methods=['GET', 'POST'])
+def plan():
+    locations = query_db("SELECT id, name, type FROM Location")
+    types = sorted({l['type'] for l in locations})
+    origin_type = dest_type = origin_id = dest_id = None
+    plans = None
+    if request.method == 'POST':
+        origin_type = request.form.get('origin_type')
+        dest_type = request.form.get('dest_type')
+        origin_id = int(request.form.get('origin_id'))
+        dest_id = int(request.form.get('dest_id'))
+        plans = find_plans(origin_id, dest_id)
+    return render_template('plan.html', types=types, locations=locations,
+                           origin_type=origin_type, dest_type=dest_type,
+                           origin_id=origin_id, dest_id=dest_id, plans=plans)
 
 @app.route('/carriers')
 def get_carriers():
