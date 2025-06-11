@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>{{ 'Edit' if tariff else 'New' }} Tariff</h1>
+<form method="post">
+    Name <input type="text" name="name" value="{{ tariff.name if tariff else '' }}"><br>
+    Cost <input type="number" step="0.01" name="cost" value="{{ tariff.cost if tariff else '' }}"><br>
+    <button type="submit">Save</button>
+</form>
+{% endblock %}
