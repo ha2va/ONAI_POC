@@ -1,6 +1,6 @@
 from flask import Flask, g, jsonify, render_template, request, redirect, url_for
 import sqlite3
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 DATABASE = 'db/onai_route.db'
@@ -88,8 +88,11 @@ CREATE TABLE IF NOT EXISTS LocationCoverage (
 
 CREATE TABLE IF NOT EXISTS Tariff (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    cost REAL
+    route_id INTEGER,
+    valid_from DATE,
+    valid_to DATE,
+    cost REAL,
+    FOREIGN KEY (route_id) REFERENCES Route(id)
 );
 '''
 
@@ -158,19 +161,50 @@ def find_plans(origin_id, dest_id):
     dfs(origin_id, [], {origin_id})
     result = []
     for plan_routes in plans:
-        total_cost = sum(r['base_cost'] or 0 for r in plan_routes)
         total_lead = sum(r['lead_time'] or 0 for r in plan_routes)
-        result.append({'routes': plan_routes, 'total_cost': total_cost, 'total_lead_time': total_lead})
+        result.append({'routes': plan_routes, 'total_lead_time': total_lead})
     return result
 
 
-def find_plans_with_tariff(origin_id, dest_id, daily_tariff):
-    """Return plans including tariff costs based on lead time."""
+def get_tariff_cost(route_id, date_str):
+    """Return the tariff cost for a route on a specific date."""
+    row = query_db(
+        "SELECT cost FROM Tariff WHERE route_id=? AND date(?) BETWEEN valid_from AND valid_to",
+        [route_id, date_str], one=True)
+    return row['cost'] if row else None
+
+
+def recommend_plans(origin_id, dest_id, start_date, end_date):
     plans = find_plans(origin_id, dest_id)
+    start_dt = datetime.strptime(start_date, '%Y-%m-%d').date()
+    end_dt = datetime.strptime(end_date, '%Y-%m-%d').date()
     for plan in plans:
-        duration = timedelta(days=plan['total_lead_time'])
-        plan['tariff_cost'] = duration.days * daily_tariff
-        plan['total_cost_with_tariff'] = plan['total_cost'] + plan['tariff_cost']
+        best_cost = None
+        best_date = None
+        date = start_dt
+        last_start = end_dt - timedelta(days=plan['total_lead_time'])
+        best_costs = None
+        while date <= last_start:
+            total = 0
+            costs = []
+            valid = True
+            for r in plan['routes']:
+                cost = get_tariff_cost(r['id'], date.strftime('%Y-%m-%d'))
+                if cost is None:
+                    valid = False
+                    break
+                costs.append(cost)
+                total += cost
+            if valid and (best_cost is None or total < best_cost):
+                best_cost = total
+                best_date = date
+                best_costs = costs
+            date += timedelta(days=1)
+        plan['total_cost'] = best_cost
+        plan['recommended_start'] = best_date.strftime('%Y-%m-%d') if best_date else None
+        if best_costs:
+            for r, c in zip(plan['routes'], best_costs):
+                r['tariff_cost'] = c
     return plans
 
 
@@ -351,32 +385,47 @@ def delete_schedule(id):
 
 @app.route('/tariffs/list')
 def list_tariffs():
-    query = "SELECT * FROM Tariff WHERE 1=1"
+    base_query = (
+        "SELECT t.*, o.name as origin_name, d.name as destination_name "
+        "FROM Tariff t "
+        "LEFT JOIN Route r ON t.route_id=r.id "
+        "LEFT JOIN Location o ON r.origin_id=o.id "
+        "LEFT JOIN Location d ON r.destination_id=d.id WHERE 1=1"
+    )
     params = []
-    if request.args.get('name'):
-        query += " AND name LIKE ?"
-        params.append('%' + request.args['name'] + '%')
-    rows = query_db(query, params)
-    return render_template('tariffs.html', rows=rows)
+    if request.args.get('route_id'):
+        base_query += " AND t.route_id=?"
+        params.append(request.args['route_id'])
+    if request.args.get('valid_from'):
+        base_query += " AND t.valid_from >= ?"
+        params.append(request.args['valid_from'])
+    if request.args.get('valid_to'):
+        base_query += " AND t.valid_to <= ?"
+        params.append(request.args['valid_to'])
+    rows = query_db(base_query, params)
+    routes = query_db("SELECT r.id, o.name as origin_name, d.name as destination_name FROM Route r LEFT JOIN Location o ON r.origin_id=o.id LEFT JOIN Location d ON r.destination_id=d.id")
+    return render_template('tariffs.html', rows=rows, routes=routes)
 
 
 @app.route('/tariffs/new', methods=['GET', 'POST'])
 def new_tariff():
+    routes = query_db("SELECT r.id, o.name as origin_name, d.name as destination_name FROM Route r LEFT JOIN Location o ON r.origin_id=o.id LEFT JOIN Location d ON r.destination_id=d.id")
     if request.method == 'POST':
-        execute_db("INSERT INTO Tariff (name, cost) VALUES (?,?)",
-                   [request.form['name'], request.form.get('cost')])
+        execute_db("INSERT INTO Tariff (route_id, valid_from, valid_to, cost) VALUES (?,?,?,?)",
+                   [request.form['route_id'], request.form['valid_from'], request.form['valid_to'], request.form.get('cost')])
         return redirect(url_for('list_tariffs'))
-    return render_template('tariff_form.html', tariff=None)
+    return render_template('tariff_form.html', tariff=None, routes=routes)
 
 
 @app.route('/tariffs/edit/<int:id>', methods=['GET', 'POST'])
 def edit_tariff(id):
     tariff = query_db("SELECT * FROM Tariff WHERE id=?", [id], one=True)
+    routes = query_db("SELECT r.id, o.name as origin_name, d.name as destination_name FROM Route r LEFT JOIN Location o ON r.origin_id=o.id LEFT JOIN Location d ON r.destination_id=d.id")
     if request.method == 'POST':
-        execute_db("UPDATE Tariff SET name=?, cost=? WHERE id=?",
-                   [request.form['name'], request.form.get('cost'), id])
+        execute_db("UPDATE Tariff SET route_id=?, valid_from=?, valid_to=?, cost=? WHERE id=?",
+                   [request.form['route_id'], request.form['valid_from'], request.form['valid_to'], request.form.get('cost'), id])
         return redirect(url_for('list_tariffs'))
-    return render_template('tariff_form.html', tariff=tariff)
+    return render_template('tariff_form.html', tariff=tariff, routes=routes)
 
 
 @app.route('/tariffs/delete/<int:id>', methods=['POST'])
@@ -389,17 +438,21 @@ def delete_tariff(id):
 def plan():
     locations = query_db("SELECT id, name, type FROM Location")
     types = sorted({l['type'] for l in locations})
-    origin_type = dest_type = origin_id = dest_id = None
+    origin_type = dest_type = origin_id = dest_id = start_date = end_date = None
     plans = None
     if request.method == 'POST':
         origin_type = request.form.get('origin_type')
         dest_type = request.form.get('dest_type')
         origin_id = int(request.form.get('origin_id'))
         dest_id = int(request.form.get('dest_id'))
-        plans = find_plans(origin_id, dest_id)
+        start_date = request.form.get('start_date')
+        end_date = request.form.get('end_date')
+        plans = recommend_plans(origin_id, dest_id, start_date, end_date)
     return render_template('plan.html', types=types, locations=locations,
                            origin_type=origin_type, dest_type=dest_type,
-                           origin_id=origin_id, dest_id=dest_id, plans=plans)
+                           origin_id=origin_id, dest_id=dest_id,
+                           start_date=start_date, end_date=end_date,
+                           plans=plans)
 
 @app.route('/carriers')
 def get_carriers():
