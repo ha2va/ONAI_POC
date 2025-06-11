@@ -166,12 +166,15 @@ def find_plans(origin_id, dest_id):
     return result
 
 
-def get_tariff_cost(route_id, date_str):
-    """Return the tariff cost for a route on a specific date."""
-    row = query_db(
-        "SELECT cost FROM Tariff WHERE route_id=? AND date(?) BETWEEN valid_from AND valid_to",
+def get_tariff_info(route_id, date_str):
+    """Return tariff id and cost for a route on a specific date."""
+    return query_db(
+        "SELECT id, cost FROM Tariff WHERE route_id=? AND date(?) BETWEEN valid_from AND valid_to",
         [route_id, date_str], one=True)
-    return row['cost'] if row else None
+
+def get_tariff_cost(route_id, date_str):
+    info = get_tariff_info(route_id, date_str)
+    return info['cost'] if info else None
 
 
 def recommend_plans(origin_id, dest_id, start_date, end_date):
@@ -184,27 +187,32 @@ def recommend_plans(origin_id, dest_id, start_date, end_date):
         date = start_dt
         last_start = end_dt - timedelta(days=plan['total_lead_time'])
         best_costs = None
+        best_ids = None
         while date <= last_start:
             total = 0
             costs = []
+            ids = []
             valid = True
             for r in plan['routes']:
-                cost = get_tariff_cost(r['id'], date.strftime('%Y-%m-%d'))
-                if cost is None:
+                info = get_tariff_info(r['id'], date.strftime('%Y-%m-%d'))
+                if info is None:
                     valid = False
                     break
-                costs.append(cost)
-                total += cost
+                costs.append(info['cost'])
+                ids.append(info['id'])
+                total += info['cost']
             if valid and (best_cost is None or total < best_cost):
                 best_cost = total
                 best_date = date
                 best_costs = costs
+                best_ids = ids
             date += timedelta(days=1)
         plan['total_cost'] = best_cost
         plan['recommended_start'] = best_date.strftime('%Y-%m-%d') if best_date else None
         if best_costs:
-            for r, c in zip(plan['routes'], best_costs):
+            for r, c, tid in zip(plan['routes'], best_costs, best_ids):
                 r['tariff_cost'] = c
+                r['tariff_id'] = tid
     return plans
 
 
@@ -393,9 +401,10 @@ def list_tariffs():
         "LEFT JOIN Location d ON r.destination_id=d.id WHERE 1=1"
     )
     params = []
-    if request.args.get('route_id'):
+    route_id = request.args.get('route_id') or request.args.get('route_select')
+    if route_id:
         base_query += " AND t.route_id=?"
-        params.append(request.args['route_id'])
+        params.append(route_id)
     if request.args.get('valid_from'):
         base_query += " AND t.valid_from >= ?"
         params.append(request.args['valid_from'])
