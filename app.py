@@ -214,16 +214,27 @@ def delete_carrier(id):
 
 @app.route('/routes/list')
 def list_routes():
-    query = "SELECT r.*, o.name as origin_name, d.name as destination_name, c.carrier_name FROM Route r LEFT JOIN Location o ON r.origin_id=o.id LEFT JOIN Location d ON r.destination_id=d.id LEFT JOIN Carrier c ON r.carrier_id=c.id WHERE 1=1"
+    query = (
+        "SELECT r.*, o.name as origin_name, d.name as destination_name, c.carrier_name "
+        "FROM Route r "
+        "LEFT JOIN Location o ON r.origin_id=o.id "
+        "LEFT JOIN Location d ON r.destination_id=d.id "
+        "LEFT JOIN Carrier c ON r.carrier_id=c.id WHERE 1=1"
+    )
     params = []
     if request.args.get('origin'):
         query += " AND o.name LIKE ?"
-        params.append('%'+request.args['origin']+'%')
+        params.append('%' + request.args['origin'] + '%')
     if request.args.get('destination'):
         query += " AND d.name LIKE ?"
-        params.append('%'+request.args['destination']+'%')
+        params.append('%' + request.args['destination'] + '%')
+    type_filter = request.args.get('type')
+    if type_filter and type_filter != 'ALL':
+        query += " AND r.type = ?"
+        params.append(type_filter)
     rows = query_db(query, params)
-    return render_template('routes.html', rows=rows)
+    types = query_db("SELECT DISTINCT type FROM Route")
+    return render_template('routes.html', rows=rows, types=types)
 
 @app.route('/routes/new', methods=['GET','POST'])
 def new_route():

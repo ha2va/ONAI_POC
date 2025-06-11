@@ -4,6 +4,13 @@
 <form method="get">
     Origin <input type="text" name="origin" value="{{ request.args.get('origin','') }}">
     Destination <input type="text" name="destination" value="{{ request.args.get('destination','') }}">
+    Type
+    <select name="type">
+        <option value="ALL" {% if request.args.get('type', 'ALL') == 'ALL' %}selected{% endif %}>ALL</option>
+        {% for t in types %}
+            <option value="{{ t['type'] }}" {% if request.args.get('type') == t['type'] %}selected{% endif %}>{{ t['type'] }}</option>
+        {% endfor %}
+    </select>
     <input type="submit" value="Search">
     <a href="{{ url_for('new_route') }}">Create</a>
 </form>
