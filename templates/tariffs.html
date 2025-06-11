@@ -1,19 +1,29 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>Tariffs</h1>
+<h1>Tariff</h1>
 <form method="get">
-    Name <input type="text" name="name" value="{{ request.args.get('name','') }}">
+    Route
+    <select name="route_id">
+        <option value="">-- All --</option>
+        {% for r in routes %}
+            <option value="{{ r['id'] }}" {% if request.args.get('route_id') == r['id']|string %}selected{% endif %}>{{ r['origin_name'] }} - {{ r['destination_name'] }}</option>
+        {% endfor %}
+    </select>
+    Valid From <input type="date" name="valid_from" value="{{ request.args.get('valid_from','') }}">
+    Valid To <input type="date" name="valid_to" value="{{ request.args.get('valid_to','') }}">
     <input type="submit" value="Search">
     <a href="{{ url_for('new_tariff') }}">Create</a>
 </form>
 <table>
 <tr>
-    <th>ID</th><th>Name</th><th>Cost</th><th>Actions</th>
+    <th>ID</th><th>Route</th><th>Valid From</th><th>Valid To</th><th>Cost</th><th>Actions</th>
 </tr>
 {% for t in rows %}
 <tr>
     <td>{{ t['id'] }}</td>
-    <td>{{ t['name'] }}</td>
+    <td>{{ t['origin_name'] }} - {{ t['destination_name'] }}</td>
+    <td>{{ t['valid_from'] }}</td>
+    <td>{{ t['valid_to'] }}</td>
     <td>{{ t['cost'] }}</td>
     <td>
         <a href="{{ url_for('edit_tariff', id=t['id']) }}">Edit</a>
