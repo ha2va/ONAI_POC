@@ -15,12 +15,12 @@
 <body>
 <nav>
     <ul>
-        <li><a href="{{ url_for('list_locations') }}">Locations</a></li>
-        <li><a href="{{ url_for('list_routes') }}">Routes</a></li>
-        <li><a href="{{ url_for('list_carriers') }}">Carriers</a></li>
-        <li><a href="{{ url_for('list_schedules') }}">Schedules</a></li>
-        <li><a href="{{ url_for('list_tariffs') }}">Tariff</a></li>
-        <li><a href="{{ url_for('plan') }}">Plan</a></li>
+        <li><a href="{{ url_for('locations.list_locations') }}">Locations</a></li>
+        <li><a href="{{ url_for('routes.list_routes') }}">Routes</a></li>
+        <li><a href="{{ url_for('carriers.list_carriers') }}">Carriers</a></li>
+        <li><a href="{{ url_for('schedules.list_schedules') }}">Schedules</a></li>
+        <li><a href="{{ url_for('tariffs.list_tariffs') }}">Tariff</a></li>
+        <li><a href="{{ url_for('plan.plan') }}">Plan</a></li>
     </ul>
 </nav>
 <main>

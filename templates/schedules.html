@@ -10,7 +10,7 @@
         {% endfor %}
     </select>
     <input type="submit" value="Search">
-    <a href="{{ url_for('new_schedule') }}">Create</a>
+    <a href="{{ url_for('schedules.new_schedule') }}">Create</a>
 </form>
 <table>
 <tr>
@@ -26,8 +26,8 @@
     <td>{{ s['frequency'] }}</td>
     <td>{{ s['type'] }}</td>
     <td>
-        <a href="{{ url_for('edit_schedule', id=s['id']) }}">Edit</a>
-        <form class="inline" method="post" action="{{ url_for('delete_schedule', id=s['id']) }}">
+        <a href="{{ url_for('schedules.edit_schedule', id=s['id']) }}">Edit</a>
+        <form class="inline" method="post" action="{{ url_for('schedules.delete_schedule', id=s['id']) }}">
             <button type="submit">Delete</button>
         </form>
     </td>

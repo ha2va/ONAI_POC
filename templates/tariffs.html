@@ -13,7 +13,7 @@
     Valid From <input type="date" name="valid_from" value="{{ request.args.get('valid_from','') }}">
     Valid To <input type="date" name="valid_to" value="{{ request.args.get('valid_to','') }}">
     <input type="submit" value="Search">
-    <a href="{{ url_for('new_tariff') }}">Create</a>
+    <a href="{{ url_for('tariffs.new_tariff') }}">Create</a>
 </form>
 <table>
 <tr>
@@ -27,8 +27,8 @@
     <td>{{ t['valid_to'] }}</td>
     <td>{{ t['cost'] }}</td>
     <td>
-        <a href="{{ url_for('edit_tariff', id=t['id']) }}">Edit</a>
-        <form class="inline" method="post" action="{{ url_for('delete_tariff', id=t['id']) }}">
+        <a href="{{ url_for('tariffs.edit_tariff', id=t['id']) }}">Edit</a>
+        <form class="inline" method="post" action="{{ url_for('tariffs.delete_tariff', id=t['id']) }}">
             <button type="submit">Delete</button>
         </form>
     </td>
