@@ -207,12 +207,13 @@ def recommend_plans(origin_id, dest_id, start_date, end_date):
                 best_costs = costs
                 best_ids = ids
             date += timedelta(days=1)
-        plan['total_cost'] = best_cost
+        plan['total_cost'] = round(best_cost, 2) if best_cost is not None else None
         plan['recommended_start'] = best_date.strftime('%Y-%m-%d') if best_date else None
         if best_costs:
             for r, c, tid in zip(plan['routes'], best_costs, best_ids):
-                r['tariff_cost'] = c
+                r['tariff_cost'] = round(c, 2)
                 r['tariff_id'] = tid
+    plans.sort(key=lambda p: (p['total_cost'] if p['total_cost'] is not None else float('inf')))
     return plans
 
 
@@ -494,6 +495,12 @@ def get_location_coverage():
 @app.route('/tariffs')
 def get_tariffs():
     return jsonify(query_all('Tariff'))
+
+
+@app.route('/tariff/<int:id>')
+def get_tariff(id):
+    row = query_db("SELECT * FROM Tariff WHERE id=?", [id], one=True)
+    return jsonify(dict(row) if row else {})
 
 if __name__ == '__main__':
     with app.app_context():
