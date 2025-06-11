@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Locations</h1>
+<form method="get">
+    Name <input type="text" name="name" value="{{ request.args.get('name','') }}">
+    Type <input type="text" name="type" value="{{ request.args.get('type','') }}">
+    Country <input type="text" name="country" value="{{ request.args.get('country','') }}">
+    <input type="submit" value="Search">
+    <a href="{{ url_for('new_location') }}">Create</a>
+</form>
+<table>
+<tr>
+    <th>ID</th><th>Name</th><th>Type</th><th>Country</th><th>Freezing</th><th>Storage</th><th>Dangerous</th><th>Actions</th>
+</tr>
+{% for l in rows %}
+<tr>
+    <td>{{ l['id'] }}</td>
+    <td>{{ l['name'] }}</td>
+    <td>{{ l['type'] }}</td>
+    <td>{{ l['country'] }}</td>
+    <td>{{ l['supports_freezing'] }}</td>
+    <td>{{ l['supports_storage'] }}</td>
+    <td>{{ l['supports_dangerous_goods'] }}</td>
+    <td>
+        <a href="{{ url_for('edit_location', id=l['id']) }}">Edit</a>
+        <form class="inline" method="post" action="{{ url_for('delete_location', id=l['id']) }}">
+            <button type="submit">Delete</button>
+        </form>
+    </td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}
