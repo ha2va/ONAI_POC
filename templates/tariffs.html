@@ -2,11 +2,12 @@
 {% block content %}
 <h1>Tariff</h1>
 <form method="get">
+    Route ID <input type="number" name="route_id" value="{{ request.args.get('route_id','') }}">
     Route
-    <select name="route_id">
+    <select name="route_select">
         <option value="">-- All --</option>
         {% for r in routes %}
-            <option value="{{ r['id'] }}" {% if request.args.get('route_id') == r['id']|string %}selected{% endif %}>{{ r['origin_name'] }} - {{ r['destination_name'] }}</option>
+            <option value="{{ r['id'] }}" {% if request.args.get('route_select') == r['id']|string %}selected{% endif %}>{{ r['origin_name'] }} - {{ r['destination_name'] }}</option>
         {% endfor %}
     </select>
     Valid From <input type="date" name="valid_from" value="{{ request.args.get('valid_from','') }}">
