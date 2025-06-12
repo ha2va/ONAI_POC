@@ -1,13 +1,31 @@
 {% extends 'base.html' %}
 {% block content %}
 <h1>{{ 'Edit' if location else 'New' }} Location</h1>
-<form method="post">
-    Name <input type="text" name="name" value="{{ location.name if location else '' }}"><br>
-    Type <input type="text" name="type" value="{{ location.type if location else '' }}"><br>
-    Country <input type="text" name="country" value="{{ location.country if location else '' }}"><br>
-    Supports Freezing <input type="checkbox" name="supports_freezing" value="1" {% if location and location.supports_freezing %}checked{% endif %}><br>
-    Supports Storage <input type="checkbox" name="supports_storage" value="1" {% if location and location.supports_storage %}checked{% endif %}><br>
-    Supports Dangerous Goods <input type="checkbox" name="supports_dangerous_goods" value="1" {% if location and location.supports_dangerous_goods %}checked{% endif %}><br>
-    <button type="submit">Save</button>
+<form method="post" class="mt-3">
+    <div class="mb-3">
+        <label class="form-label">Name</label>
+        <input class="form-control" type="text" name="name" value="{{ location.name if location else '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Type</label>
+        <input class="form-control" type="text" name="type" value="{{ location.type if location else '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Country</label>
+        <input class="form-control" type="text" name="country" value="{{ location.country if location else '' }}">
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="supports_freezing" value="1" id="sf" {% if location and location.supports_freezing %}checked{% endif %}>
+        <label class="form-check-label" for="sf">Supports Freezing</label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="supports_storage" value="1" id="ss" {% if location and location.supports_storage %}checked{% endif %}>
+        <label class="form-check-label" for="ss">Supports Storage</label>
+    </div>
+    <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="supports_dangerous_goods" value="1" id="sdg" {% if location and location.supports_dangerous_goods %}checked{% endif %}>
+        <label class="form-check-label" for="sdg">Supports Dangerous Goods</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
 </form>
 {% endblock %}

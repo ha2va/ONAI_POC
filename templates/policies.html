@@ -2,7 +2,7 @@
 {% block content %}
 <h1>Policies</h1>
 <a href="{{ url_for('policies.new_policy') }}">Create</a>
-<table>
+<table class="table table-bordered table-sm">
     <tr><th>ID</th><th>Description</th><th>Priority</th><th>Active</th><th>Actions</th></tr>
     {% for p in rows %}
     <tr>
