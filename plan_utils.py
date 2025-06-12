@@ -88,9 +88,7 @@ def find_plans(origin_id, dest_id, shipment=None, applied=None):
     # 인접 리스트 형태의 그래프 생성
     adj = {}
     for r in routes:
-
         if shipment is None or route_allowed(r, shipment, policies, applied_list):
-
             adj.setdefault(r['origin_id'], []).append(r)
 
     plans = []
@@ -99,14 +97,15 @@ def find_plans(origin_id, dest_id, shipment=None, applied=None):
         """깊이 우선 탐색으로 경로를 추적한다."""
         # 목적지에 도달하면 현재까지의 경로를 저장
         if current == dest_id:
-            plans.append(list(path))
+            # store a deep copy of the current path so each plan has its own route objects
+            plans.append([dict(p) for p in path])
             return
         # 현재 노드에서 갈 수 있는 모든 노드를 순회
         for r in adj.get(current, []):
             # 이미 방문한 노드는 다시 방문하지 않음으로써 순환 방지
             if r['destination_id'] not in visited:
                 visited.add(r['destination_id'])
-                path.append(r)
+                path.append(dict(r))
                 dfs(r['destination_id'], path, visited)
                 path.pop()
                 visited.remove(r['destination_id'])
@@ -142,6 +141,9 @@ def recommend_plans(origin_id, dest_id, start_date, end_date, shipment=None):
     start_dt = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_dt = datetime.strptime(end_date, '%Y-%m-%d').date()
     for plan in plans:
+        for r in plan['routes']:
+            r['tariff_cost'] = None
+            r['tariff_id'] = None
         best_cost = None
         best_date = None
         date = start_dt
