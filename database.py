@@ -1,5 +1,15 @@
 import sqlite3
+import logging
 from flask import g
+
+# Configure logger for database operations
+logger = logging.getLogger(__name__)
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 DATABASE = 'db/onai_route.db'
 
@@ -117,21 +127,26 @@ def close_connection(exception):
 
 def init_db():
     db = get_db()
+    logger.info('Executing schema initialization script')
     db.executescript(SCHEMA)
     # ensure new columns exist when schema evolves
     cur = db.execute("PRAGMA table_info(Policy)")
     cols = [row[1] for row in cur.fetchall()]
     if 'priority' not in cols:
+        logger.info('Executing DB query: ALTER TABLE Policy ADD COLUMN priority INTEGER DEFAULT 0')
         db.execute("ALTER TABLE Policy ADD COLUMN priority INTEGER DEFAULT 0")
     db.commit()
 
 def query_all(table):
-    cur = get_db().execute(f'SELECT * FROM {table}')
+    query = f'SELECT * FROM {table}'
+    logger.info('Executing DB query: %s', query)
+    cur = get_db().execute(query)
     rows = cur.fetchall()
     cur.close()
     return [dict(row) for row in rows]
 
 def query_db(query, args=(), one=False):
+    logger.info('Executing DB query: %s | args=%s', query, args)
     cur = get_db().execute(query, args)
     rv = cur.fetchall()
     cur.close()
@@ -139,6 +154,7 @@ def query_db(query, args=(), one=False):
 
 def execute_db(query, args=()):
     db = get_db()
+    logger.info('Executing DB query: %s | args=%s', query, args)
     cur = db.execute(query, args)
     db.commit()
     return cur.lastrowid
