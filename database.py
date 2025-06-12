@@ -118,6 +118,11 @@ def close_connection(exception):
 def init_db():
     db = get_db()
     db.executescript(SCHEMA)
+    # ensure new columns exist when schema evolves
+    cur = db.execute("PRAGMA table_info(Policy)")
+    cols = [row[1] for row in cur.fetchall()]
+    if 'priority' not in cols:
+        db.execute("ALTER TABLE Policy ADD COLUMN priority INTEGER DEFAULT 0")
     db.commit()
 
 def query_all(table):
