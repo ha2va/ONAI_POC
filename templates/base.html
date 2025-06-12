@@ -3,29 +3,29 @@
 <head>
     <meta charset="utf-8">
     <title>{{ title or 'DB Admin' }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUa0RPrXZ9h6IL5YsbFh0eLz9F3yBL+91pVyMj4fgR7w7BXy8Qp1FIyJcsL/" crossorigin="anonymous">
     <style>
-        body { font-family: Arial, sans-serif; display: flex; }
-        nav { width: 200px; background: #f2f2f2; padding: 1em; }
-        main { flex: 1; padding: 1em; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ccc; padding: 4px 8px; }
+        body { display: flex; min-height: 100vh; }
+        nav { width: 220px; }
+        main { flex: 1; }
         form.inline { display: inline; }
     </style>
 </head>
 <body>
-<nav>
-    <ul>
-        <li><a href="{{ url_for('locations.list_locations') }}">Locations</a></li>
-        <li><a href="{{ url_for('routes.list_routes') }}">Routes</a></li>
-        <li><a href="{{ url_for('carriers.list_carriers') }}">Carriers</a></li>
-        <li><a href="{{ url_for('schedules.list_schedules') }}">Schedules</a></li>
-        <li><a href="{{ url_for('tariffs.list_tariffs') }}">Tariff</a></li>
-        <li><a href="{{ url_for('policies.list_policies') }}">Policies</a></li>
-        <li><a href="{{ url_for('plan.plan') }}">Plan</a></li>
+<nav class="flex-shrink-0 p-3 bg-light border-end">
+    <ul class="nav nav-pills flex-column mb-auto">
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('locations.list_locations') }}">Locations</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.list_routes') }}">Routes</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('carriers.list_carriers') }}">Carriers</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('schedules.list_schedules') }}">Schedules</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('tariffs.list_tariffs') }}">Tariff</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('policies.list_policies') }}">Policies</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('plan.plan') }}">Plan</a></li>
     </ul>
 </nav>
-<main>
+<main class="p-3 flex-grow-1">
 {% block content %}{% endblock %}
 </main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoA6Y9gZxE2df4kL8ss9cxe3tx1IGBtw1L1+cI8P4Yx04iq" crossorigin="anonymous"></script>
 </body>
 </html>

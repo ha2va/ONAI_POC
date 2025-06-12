@@ -37,7 +37,7 @@
     <p>Available routes after policy: {{ plans|length }}</p>
     {% for plan in plans %}
         <h3>Plan {{ loop.index }} - Routes: {{ plan.routes|length }}, Recommended Start: {{ plan.recommended_start }}, Cost Sum: {{ plan.total_cost }}, Lead Time Sum: {{ plan.total_lead_time }}</h3>
-        <table>
+        <table class="table table-bordered table-sm">
             <tr>
                 <th>#</th><th>Route ID</th><th>Origin</th><th>Destination</th><th>Tariff ID</th><th>Cost</th><th>Lead Time</th><th>Freezing</th><th>Dangerous</th>
             </tr>
