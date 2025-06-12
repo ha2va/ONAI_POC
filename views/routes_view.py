@@ -24,6 +24,14 @@ def list_routes():
     if type_filter and type_filter != 'ALL':
         query += " AND r.type = ?"
         params.append(type_filter)
+    freezing = request.args.get('freezing')
+    if freezing in ('0', '1'):
+        query += " AND r.supports_freezing = ?"
+        params.append(int(freezing))
+    dangerous = request.args.get('dangerous')
+    if dangerous in ('0', '1'):
+        query += " AND r.supports_dangerous_goods = ?"
+        params.append(int(dangerous))
     rows = query_db(query, params)
     types = query_db("SELECT DISTINCT type FROM Route")
     return render_template('routes.html', rows=rows, types=types)

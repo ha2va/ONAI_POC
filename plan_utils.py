@@ -33,12 +33,23 @@ def evaluate_conditions(conds, facts):
     return result if result is not None else True
 
 
-def route_allowed(route, shipment, policies):
+
+def route_allowed(route, shipment, policies, applied=None):
+    """Return True if the route is allowed under given shipment and policies.
+
+    If ``applied`` is provided (a list), policy descriptions that match the
+    shipment/route are appended in priority order without duplicates.
+    """
+
     facts = {**shipment, **route}
     for p in policies:
         try:
             conds = json.loads(p['conditions']) if p['conditions'] else []
             if evaluate_conditions(conds, facts):
+
+                if applied is not None and p['description'] not in applied:
+                    applied.append(p['description'])
+
                 act = json.loads(p['action']) if p['action'] else {}
                 if 'allow_route_ids' in act and route['id'] not in act['allow_route_ids']:
                     return False
@@ -54,8 +65,13 @@ def route_allowed(route, shipment, policies):
             continue
     return True
 
-def find_plans(origin_id, dest_id, shipment=None):
-    """주어진 출발지와 도착지 사이의 가능한 모든 경로를 찾는다."""
+
+def find_plans(origin_id, dest_id, shipment=None, applied=None):
+    """주어진 출발지와 도착지 사이의 가능한 모든 경로를 찾는다.
+
+    ``applied``가 주어지면 정책이 적용될 때 해당 정책 설명을 리스트에 추가한다.
+    """
+
 
     # 모든 Route 정보를 조회하여 그래프 형태로 변환
     routes = query_db(
@@ -66,10 +82,15 @@ def find_plans(origin_id, dest_id, shipment=None):
     )
     policies = load_policies()
 
+    applied_list = applied if applied is not None else []
+
+
     # 인접 리스트 형태의 그래프 생성
     adj = {}
     for r in routes:
-        if shipment is None or route_allowed(r, shipment, policies):
+
+        if shipment is None or route_allowed(r, shipment, policies, applied_list):
+
             adj.setdefault(r['origin_id'], []).append(r)
 
     plans = []
@@ -98,7 +119,7 @@ def find_plans(origin_id, dest_id, shipment=None):
     for plan_routes in plans:
         total_lead = sum(r['lead_time'] or 0 for r in plan_routes)
         result.append({'routes': plan_routes, 'total_lead_time': total_lead})
-    return result
+    return result, applied_list
 
 
 def get_tariff_info(route_id, date_str):
@@ -114,8 +135,10 @@ def get_tariff_cost(route_id, date_str):
 
 
 def recommend_plans(origin_id, dest_id, start_date, end_date, shipment=None):
-    """모든 경로에 대해 비용과 시작일을 계산하여 추천"""
-    plans = find_plans(origin_id, dest_id, shipment)
+
+    """모든 경로에 대해 비용과 시작일을 계산하여 추천하고 적용된 정책 목록을 반환"""
+    plans, applied = find_plans(origin_id, dest_id, shipment, applied=[])
+
     start_dt = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_dt = datetime.strptime(end_date, '%Y-%m-%d').date()
     for plan in plans:
@@ -151,4 +174,4 @@ def recommend_plans(origin_id, dest_id, start_date, end_date, shipment=None):
                 r['tariff_cost'] = round(c, 2)
                 r['tariff_id'] = tid
     plans.sort(key=lambda p: (p['total_cost'] if p['total_cost'] is not None else float('inf')))
-    return plans
+    return plans, applied

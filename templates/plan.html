@@ -30,6 +30,9 @@
     <button type="submit">Plan 추천</button>
 </form>
 {% if plans is not none %}
+
+    <p>적용 정책 : {% if applied_policies %}{{ applied_policies|join(', ') }}{% else %}적용된 정책이 없습니다{% endif %}</p>
+
     {% if plans %}
     <p>Available routes after policy: {{ plans|length }}</p>
     {% for plan in plans %}

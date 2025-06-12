@@ -11,6 +11,18 @@
             <option value="{{ t['type'] }}" {% if request.args.get('type') == t['type'] %}selected{% endif %}>{{ t['type'] }}</option>
         {% endfor %}
     </select>
+    Freezing
+    <select name="freezing">
+        <option value="ALL" {% if request.args.get('freezing', 'ALL') == 'ALL' %}selected{% endif %}>ALL</option>
+        <option value="1" {% if request.args.get('freezing') == '1' %}selected{% endif %}>1</option>
+        <option value="0" {% if request.args.get('freezing') == '0' %}selected{% endif %}>0</option>
+    </select>
+    Dangerous
+    <select name="dangerous">
+        <option value="ALL" {% if request.args.get('dangerous', 'ALL') == 'ALL' %}selected{% endif %}>ALL</option>
+        <option value="1" {% if request.args.get('dangerous') == '1' %}selected{% endif %}>1</option>
+        <option value="0" {% if request.args.get('dangerous') == '0' %}selected{% endif %}>0</option>
+    </select>
     <input type="submit" value="Search">
     <a href="{{ url_for('routes.new_route') }}">Create</a>
 </form>

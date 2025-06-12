@@ -11,7 +11,9 @@ def plan():
     types = sorted({l['type'] for l in locations})
     origin_type = dest_type = origin_id = dest_id = start_date = end_date = None
     weight = requires_freezing = is_dangerous = None
-    plans = None
+
+    plans = applied_policies = None
+
     if request.method == 'POST':
         origin_type = request.form.get('origin_type')
         dest_type = request.form.get('dest_type')
@@ -27,7 +29,9 @@ def plan():
             'requires_freezing': requires_freezing,
             'is_dangerous': is_dangerous,
         }
-        plans = recommend_plans(origin_id, dest_id, start_date, end_date, shipment)
+
+        plans, applied_policies = recommend_plans(origin_id, dest_id, start_date, end_date, shipment)
+
     return render_template(
         'plan.html',
         types=types,
@@ -42,4 +46,5 @@ def plan():
         requires_freezing=requires_freezing,
         is_dangerous=is_dangerous,
         plans=plans,
+        applied_policies=applied_policies,
     )
