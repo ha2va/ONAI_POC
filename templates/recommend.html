@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+    <title>Route Recommendation</title>
+    <style>
+        table, th, td { border: 1px solid black; border-collapse: collapse; padding: 4px; }
+    </style>
+</head>
+<body>
+    <h1>운송 경로 추천</h1>
+    <form method="post" action="/recommend">
+        <label>Origin ID: <input type="number" name="origin_id" required></label><br>
+        <label>Destination ID: <input type="number" name="destination_id" required></label><br>
+        <label>무게: <input type="number" step="0.1" name="weight"></label><br>
+        <label>냉장 여부: <input type="checkbox" name="requires_freezing"></label><br>
+        <label>위험물 여부: <input type="checkbox" name="is_dangerous"></label><br>
+        <button type="submit">추천</button>
+    </form>
+
+    {% if summary %}
+    <h2>필터링 결과</h2>
+    <p>{{ summary }}</p>
+    <table>
+        <tr><th>Route ID</th><th>Transport Mode</th><th>기본 비용</th></tr>
+        {% for r in routes %}
+        <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.transport_mode }}</td>
+            <td>{{ r.base_cost }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+</body>
+</html>
