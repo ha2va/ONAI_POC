@@ -4,7 +4,7 @@ import json
 
 
 def load_policies():
-    return query_db("SELECT * FROM Policy WHERE active=1")
+    return query_db("SELECT * FROM Policy WHERE active=1 ORDER BY priority ASC")
 
 
 def evaluate_conditions(conds, facts):
@@ -45,6 +45,10 @@ def route_allowed(route, shipment, policies):
                 if 'block_route_ids' in act and route['id'] in act['block_route_ids']:
                     return False
                 if 'allow_modes' in act and route.get('transport_mode') not in act['allow_modes']:
+                    return False
+                if 'route_freezing' in act and route.get('supports_freezing') != act['route_freezing']:
+                    return False
+                if 'route_dangerous' in act and route.get('supports_dangerous_goods') != act['route_dangerous']:
                     return False
         except Exception:
             continue

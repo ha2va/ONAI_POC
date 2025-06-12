@@ -98,7 +98,8 @@ CREATE TABLE IF NOT EXISTS Policy (
     description TEXT,
     conditions TEXT,
     action TEXT,
-    active BOOLEAN
+    active BOOLEAN,
+    priority INTEGER
 );
 '''
 
