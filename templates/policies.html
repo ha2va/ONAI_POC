@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Policies</h1>
+<a href="{{ url_for('policies.new_policy') }}">Create</a>
+<table>
+    <tr><th>ID</th><th>Description</th><th>Priority</th><th>Active</th><th>Actions</th></tr>
+    {% for p in rows %}
+    <tr>
+        <td>{{ p.id }}</td>
+        <td>{{ p.description }}</td>
+        <td>{{ p.priority }}</td>
+        <td>{{ 'Y' if p.active else 'N' }}</td>
+        <td>
+            <a href="{{ url_for('policies.edit_policy', id=p.id) }}">Edit</a>
+            <form class="inline" method="post" action="{{ url_for('policies.delete_policy', id=p.id) }}">
+                <button type="submit">Delete</button>
+            </form>
+            <form class="inline" method="post" action="{{ url_for('policies.move_policy', id=p.id, direction='up') }}">
+                <button type="submit">▲</button>
+            </form>
+            <form class="inline" method="post" action="{{ url_for('policies.move_policy', id=p.id, direction='down') }}">
+                <button type="submit">▼</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

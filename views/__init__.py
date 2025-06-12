@@ -5,6 +5,7 @@ from .schedules import bp as schedules_bp
 from .tariffs import bp as tariffs_bp
 from .plan_view import bp as plan_bp
 from .api import bp as api_bp
+from .policies import bp as policies_bp
 
 __all__ = [
     'locations_bp',
@@ -14,4 +15,5 @@ __all__ = [
     'tariffs_bp',
     'plan_bp',
     'api_bp',
+    'policies_bp',
 ]

@@ -9,6 +9,7 @@ from views import (
     tariffs_bp,
     plan_bp,
     api_bp,
+    policies_bp,
 )
 
 app = Flask(__name__)
@@ -27,6 +28,7 @@ app.register_blueprint(schedules_bp)
 app.register_blueprint(tariffs_bp)
 app.register_blueprint(plan_bp)
 app.register_blueprint(api_bp)
+app.register_blueprint(policies_bp)
 
 if __name__ == '__main__':
     with app.app_context():
