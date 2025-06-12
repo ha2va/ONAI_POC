@@ -1,22 +1,72 @@
 from datetime import datetime, timedelta
 from database import query_db
+import json
 
 
-def find_plans(origin_id, dest_id):
+def load_policies():
+    return query_db("SELECT * FROM Policy WHERE active=1")
+
+
+def evaluate_conditions(conds, facts):
+    ops = {
+        '=': lambda a, b: a == b,
+        '!=': lambda a, b: a != b,
+        '>': lambda a, b: float(a) > float(b),
+        '<': lambda a, b: float(a) < float(b),
+    }
+    result = None
+    prev_conn = 'AND'
+    for c in conds:
+        val = facts.get(c.get('field'))
+        op = ops.get(c.get('op', '='))
+        if op is None:
+            continue
+        res = op(val, type(val)(c.get('value')) if isinstance(val, (int, float)) else c.get('value'))
+        if result is None:
+            result = res
+        else:
+            if prev_conn == 'AND':
+                result = result and res
+            else:
+                result = result or res
+        prev_conn = c.get('connector', 'AND')
+    return result if result is not None else True
+
+
+def route_allowed(route, shipment, policies):
+    facts = {**shipment, **route}
+    for p in policies:
+        try:
+            conds = json.loads(p['conditions']) if p['conditions'] else []
+            if evaluate_conditions(conds, facts):
+                act = json.loads(p['action']) if p['action'] else {}
+                if 'allow_route_ids' in act and route['id'] not in act['allow_route_ids']:
+                    return False
+                if 'block_route_ids' in act and route['id'] in act['block_route_ids']:
+                    return False
+                if 'allow_modes' in act and route.get('transport_mode') not in act['allow_modes']:
+                    return False
+        except Exception:
+            continue
+    return True
+
+def find_plans(origin_id, dest_id, shipment=None):
     """주어진 출발지와 도착지 사이의 가능한 모든 경로를 찾는다."""
 
     # 모든 Route 정보를 조회하여 그래프 형태로 변환
     routes = query_db(
-        "SELECT r.id, r.origin_id, o.name as origin_name, r.destination_id, d.name as destination_name, r.base_cost, r.lead_time "
+        "SELECT r.id, r.origin_id, o.name as origin_name, r.destination_id, d.name as destination_name, r.base_cost, r.lead_time, r.transport_mode, r.supports_freezing, r.supports_dangerous_goods "
         "FROM Route r "
         "LEFT JOIN Location o ON r.origin_id=o.id "
         "LEFT JOIN Location d ON r.destination_id=d.id"
     )
+    policies = load_policies()
 
     # 인접 리스트 형태의 그래프 생성
     adj = {}
     for r in routes:
-        adj.setdefault(r['origin_id'], []).append(r)
+        if shipment is None or route_allowed(r, shipment, policies):
+            adj.setdefault(r['origin_id'], []).append(r)
 
     plans = []
 
@@ -59,9 +109,9 @@ def get_tariff_cost(route_id, date_str):
     return info['cost'] if info else None
 
 
-def recommend_plans(origin_id, dest_id, start_date, end_date):
+def recommend_plans(origin_id, dest_id, start_date, end_date, shipment=None):
     """모든 경로에 대해 비용과 시작일을 계산하여 추천"""
-    plans = find_plans(origin_id, dest_id)
+    plans = find_plans(origin_id, dest_id, shipment)
     start_dt = datetime.strptime(start_date, '%Y-%m-%d').date()
     end_dt = datetime.strptime(end_date, '%Y-%m-%d').date()
     for plan in plans:

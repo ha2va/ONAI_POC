@@ -92,6 +92,14 @@ CREATE TABLE IF NOT EXISTS Tariff (
     cost REAL,
     FOREIGN KEY (route_id) REFERENCES Route(id)
 );
+
+CREATE TABLE IF NOT EXISTS Policy (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    description TEXT,
+    conditions TEXT,
+    action TEXT,
+    active BOOLEAN
+);
 '''
 
 def get_db():
