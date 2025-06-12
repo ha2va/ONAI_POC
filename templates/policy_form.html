@@ -4,6 +4,7 @@
 <form method="post" id="policy-form">
     Description <input type="text" name="description" value="{{ policy.description if policy else '' }}"><br>
     Active <input type="checkbox" name="active" value="1" {% if policy and policy.active %}checked{% endif %}><br>
+    Priority <input type="number" name="priority" value="{{ policy.priority if policy else '' }}"><br>
     <h3>Conditions</h3>
     <table id="conds"></table>
     <button type="button" onclick="addCond()">Add Condition</button>
@@ -12,6 +13,8 @@
     Allow Route IDs <input type="text" id="allow_routes" value=""><br>
     Block Route IDs <input type="text" id="block_routes" value=""><br>
     Allow Modes <input type="text" id="allow_modes" value=""><br>
+    Route Freezing <select id="route_freezing"><option value="">Any</option><option value="1">1</option><option value="0">0</option></select><br>
+    Route Dangerous <select id="route_dangerous"><option value="">Any</option><option value="1">1</option><option value="0">0</option></select><br>
     <input type="hidden" name="action_json" id="action_json">
     <button type="submit">Save</button>
 </form>
@@ -45,13 +48,24 @@ function gather(){
     if(block) action.block_route_ids=block.split(',').map(s=>parseInt(s.trim())).filter(n=>!isNaN(n));
     const modes=document.getElementById('allow_modes').value.trim();
     if(modes) action.allow_modes=modes.split(',').map(s=>s.trim()).filter(s=>s);
+    const rf=document.getElementById('route_freezing').value;
+    if(rf!=='') action.route_freezing=parseInt(rf);
+    const rd=document.getElementById('route_dangerous').value;
+    if(rd!=='') action.route_dangerous=parseInt(rd);
     document.getElementById('action_json').value=JSON.stringify(action);
 }
 document.getElementById('policy-form').addEventListener('submit',gather);
 {% if policy %}
 const pc = {{ policy.conditions|tojson }};
 try{const conds=JSON.parse(pc);conds.forEach(c=>addCond(c.field,c.op,c.value,c.connector));}catch(e){}
-try{const ac=JSON.parse({{ policy.action|tojson }});if(ac.allow_route_ids)document.getElementById('allow_routes').value=ac.allow_route_ids.join(',');if(ac.block_route_ids)document.getElementById('block_routes').value=ac.block_route_ids.join(',');if(ac.allow_modes)document.getElementById('allow_modes').value=ac.allow_modes.join(',');}catch(e){}
+try{
+    const ac=JSON.parse({{ policy.action|tojson }});
+    if(ac.allow_route_ids) document.getElementById('allow_routes').value=ac.allow_route_ids.join(',');
+    if(ac.block_route_ids) document.getElementById('block_routes').value=ac.block_route_ids.join(',');
+    if(ac.allow_modes) document.getElementById('allow_modes').value=ac.allow_modes.join(',');
+    if(ac.route_freezing!==undefined) document.getElementById('route_freezing').value=String(ac.route_freezing);
+    if(ac.route_dangerous!==undefined) document.getElementById('route_dangerous').value=String(ac.route_dangerous);
+}catch(e){}
 {% else %}
 addCond();
 {% endif %}
