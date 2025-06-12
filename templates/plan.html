@@ -47,8 +47,8 @@
                 <td>{{ r['id'] }}</td>
                 <td>{{ r['origin_name'] }}</td>
                 <td>{{ r['destination_name'] }}</td>
-                <td><span class="tariff" data-id="{{ r['tariff_id'] }}">{{ r['tariff_id'] }}</span></td>
-                <td>{{ r['tariff_cost'] }}</td>
+                <td><span class="tariff" data-id="{{ r['tariff_id'] }}">{{ r['tariff_id'] if r['tariff_id'] is not none else 'N/A' }}</span></td>
+                <td>{{ r['tariff_cost'] if r['tariff_cost'] is not none else 'N/A' }}</td>
                 <td>{{ r['lead_time'] }}</td>
                 <td>{{ r['supports_freezing'] }}</td>
                 <td>{{ r['supports_dangerous_goods'] }}</td>
@@ -102,6 +102,15 @@ window.addEventListener('load', () => {
         el.addEventListener('mouseleave', () => {
             tooltip.style.display = 'none';
         });
+    });
+
+    document.getElementById('plan-form').addEventListener('submit', (e) => {
+        const start = document.querySelector('input[name="start_date"]').value;
+        const end = document.querySelector('input[name="end_date"]').value;
+        if(!start || !end){
+            alert('출발일과 도착일을 선택하세요.');
+            e.preventDefault();
+        }
     });
 });
 </script>
