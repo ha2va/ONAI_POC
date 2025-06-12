@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>{{ 'Edit' if policy else 'New' }} Policy</h1>
+<form method="post" id="policy-form">
+    Description <input type="text" name="description" value="{{ policy.description if policy else '' }}"><br>
+    Active <input type="checkbox" name="active" value="1" {% if policy and policy.active %}checked{% endif %}><br>
+    <h3>Conditions</h3>
+    <table id="conds"></table>
+    <button type="button" onclick="addCond()">Add Condition</button>
+    <input type="hidden" name="conditions_json" id="conditions_json">
+    <h3>Action</h3>
+    Allow Route IDs <input type="text" id="allow_routes" value=""><br>
+    Block Route IDs <input type="text" id="block_routes" value=""><br>
+    Allow Modes <input type="text" id="allow_modes" value=""><br>
+    <input type="hidden" name="action_json" id="action_json">
+    <button type="submit">Save</button>
+</form>
+<script>
+const fields = ['requires_freezing','is_dangerous','weight'];
+function addCond(field='',op='=',value='',connector='AND'){
+    const table=document.getElementById('conds');
+    const row=document.createElement('tr');
+    row.innerHTML=`<td><select class="field">${fields.map(f=>`<option value="${f}" ${f==field?'selected':''}>${f}</option>`).join('')}</select></td>`+
+                  `<td><select class="op"><option>=</option><option>!=</option><option>></option><option><</option></select></td>`+
+                  `<td><input class="value" value="${value}"></td>`+
+                  `<td><select class="conn"><option value="AND" ${connector=='AND'?'selected':''}>AND</option><option value="OR" ${connector=='OR'?'selected':''}>OR</option></select></td>`;
+    row.querySelector('.op').value=op;
+    table.appendChild(row);
+}
+function gather(){
+    const conds=[];
+    document.querySelectorAll('#conds tr').forEach(tr=>{
+        conds.push({
+            field:tr.querySelector('.field').value,
+            op:tr.querySelector('.op').value,
+            value:tr.querySelector('.value').value,
+            connector:tr.querySelector('.conn').value
+        });
+    });
+    document.getElementById('conditions_json').value=JSON.stringify(conds);
+    const action={};
+    const allow=document.getElementById('allow_routes').value.trim();
+    if(allow) action.allow_route_ids=allow.split(',').map(s=>parseInt(s.trim())).filter(n=>!isNaN(n));
+    const block=document.getElementById('block_routes').value.trim();
+    if(block) action.block_route_ids=block.split(',').map(s=>parseInt(s.trim())).filter(n=>!isNaN(n));
+    const modes=document.getElementById('allow_modes').value.trim();
+    if(modes) action.allow_modes=modes.split(',').map(s=>s.trim()).filter(s=>s);
+    document.getElementById('action_json').value=JSON.stringify(action);
+}
+document.getElementById('policy-form').addEventListener('submit',gather);
+{% if policy %}
+const pc = {{ policy.conditions|tojson }};
+try{const conds=JSON.parse(pc);conds.forEach(c=>addCond(c.field,c.op,c.value,c.connector));}catch(e){}
+try{const ac=JSON.parse({{ policy.action|tojson }});if(ac.allow_route_ids)document.getElementById('allow_routes').value=ac.allow_route_ids.join(',');if(ac.block_route_ids)document.getElementById('block_routes').value=ac.block_route_ids.join(',');if(ac.allow_modes)document.getElementById('allow_modes').value=ac.allow_modes.join(',');}catch(e){}
+{% else %}
+addCond();
+{% endif %}
+</script>
+{% endblock %}
