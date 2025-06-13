@@ -33,4 +33,6 @@ app.register_blueprint(policies_bp)
 if __name__ == '__main__':
     with app.app_context():
         init_db()
-    app.run(debug=True)
+    # Listen on all network interfaces so the app is reachable from
+    # external hosts as well as localhost
+    app.run(debug=True, host='0.0.0.0')
