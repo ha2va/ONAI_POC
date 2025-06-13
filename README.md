@@ -19,7 +19,9 @@ pip install -r requirements.txt
 python app.py
 ```
 
-애플리케이션은 `db/onai_route.db` 파일을 사용합니다.
+The server now listens on all network interfaces (0.0.0.0) so you can
+access it from other machines as long as the port is open. The
+application uses the `db/onai_route.db` file for its database.
 
 ## Tariff table
 
